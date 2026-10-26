@@ -5,8 +5,21 @@ public sealed class ProgressionEngine(IEnumerable<IProgressionScheme> schemes)
 {
     private Dictionary<string, IProgressionScheme>? _schemes;
 
-    public ProgressionOutcome Progress(ProgramExercise exercise, ExerciseState state, ExerciseLog log) =>
-        Scheme(exercise.SchemeKey).Progress(exercise.Parameters, state, log);
+    public ProgressionOutcome Progress(ProgramExercise exercise, ExerciseState state, ExerciseLog log)
+    {
+        if (log.ExerciseId != exercise.ExerciseId)
+        {
+            throw new ArgumentException($"The log is for exercise {log.ExerciseId}, not {exercise.ExerciseId}.", nameof(log));
+        }
+
+        // A skipped exercise is left out of the workout, so its state stays as it is (clarified rule 9).
+        if (log.Sets.Count == 0)
+        {
+            throw new ArgumentException($"The log for exercise {log.ExerciseId} has no sets.", nameof(log));
+        }
+
+        return Scheme(exercise.SchemeKey).Progress(exercise.Parameters, state, log);
+    }
 
     public int PlannedSets(ProgramExercise exercise) => Scheme(exercise.SchemeKey).PlannedSets(exercise.Parameters);
 

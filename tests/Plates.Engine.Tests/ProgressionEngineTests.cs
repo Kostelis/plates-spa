@@ -14,6 +14,21 @@ public class ProgressionEngineTests
     }
 
     [Fact]
+    public void RejectsALogForAnotherExercise()
+    {
+        var otherExerciseLog = ExerciseLog.Of(Guid.NewGuid(), Set(60m, 8), Set(60m, 8), Set(60m, 8));
+
+        Assert.Throws<ArgumentException>(() => NewEngine().Progress(Squat(), State(recordKg: null), otherExerciseLog));
+    }
+
+    [Fact]
+    public void RejectsALogWithoutSets()
+    {
+        // A skipped exercise is left out of the workout; it never reaches the engine.
+        Assert.Throws<ArgumentException>(() => NewEngine().Progress(Squat(), State(recordKg: null), Log()));
+    }
+
+    [Fact]
     public void ReturnsTheNewSchemeState()
     {
         var outcome = NewEngine().Progress(Squat(), State(recordKg: null, failureCount: 1), Log(Set(60m, 8), Set(60m, 8), Set(60m, 8)));

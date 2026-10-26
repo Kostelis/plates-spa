@@ -4,7 +4,7 @@ namespace Plates.Engine;
 
 /// <summary>
 /// The shared pipeline of every scheme: deserialize → <see cref="Decide"/> → rounding (rule 6) → records (rule 7) → serialize state.
-/// A new scheme defines its parameter and state types and overrides <see cref="Decide"/> and <see cref="CountPlannedSets"/>.
+/// A new scheme defines its parameter and state types and overrides <see cref="Decide"/>, <see cref="CountPlannedSets"/> and <see cref="FailureCount"/>.
 /// </summary>
 public abstract class ProgressionSchemeBase<TParameters, TState>(RecordCalculator? records) : IProgressionScheme
     where TState : new()
@@ -24,12 +24,15 @@ public abstract class ProgressionSchemeBase<TParameters, TState>(RecordCalculato
             TargetRounding.RoundDown(decision.Target),
             decision.Code,
             DecisionTexts.For(decision.Code),
-            decision.FailureCount,
+            FailureCount(decision.State),
             _records.Next(state.Record, log.Sets),
             JsonSerializer.SerializeToElement(decision.State, JsonSerializerOptions.Web));
     }
 
     protected abstract int CountPlannedSets(TParameters parameters);
+
+    /// <summary>The Failure counter the outcome reports; the state is its only owner.</summary>
+    protected abstract int FailureCount(TState state);
 
     /// <summary>Decides the next Target before rounding. Caps such as the 500 kg limit belong here.</summary>
     protected abstract SchemeDecision<TState> Decide(TParameters parameters, TState state, ExerciseLog log);

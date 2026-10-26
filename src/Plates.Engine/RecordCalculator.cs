@@ -18,9 +18,9 @@ public sealed class RecordCalculator(OneRepMaxFormula? formula = null)
             return record;
         }
 
-        var candidate = Weight.FromKg(estimates.Max());
-        var current = record ?? candidate;
-        return candidate > current ? candidate : current;
+        // No Record yet: record?.Kg is null, the comparison is false, and the estimate becomes the Record.
+        var best = estimates.Max();
+        return record?.Kg >= best ? record : Weight.FromKg(best);
     }
 
     private decimal Estimate(LoggedSet set)

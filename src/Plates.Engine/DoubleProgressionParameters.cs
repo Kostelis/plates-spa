@@ -20,7 +20,7 @@ public sealed class DoubleProgressionParameters
         ArgumentOutOfRangeException.ThrowIfGreaterThan(maxReps, RepLimit);
         if (increment.Kg <= 0 || increment.Kg % TargetRounding.PlateStepKg != 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(increment), increment, "Increment must be a positive multiple of 2.5 kg.");
+            throw new ArgumentOutOfRangeException(nameof(increment), increment, $"Increment must be a positive multiple of {TargetRounding.PlateStepKg} kg.");
         }
 
         ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(deloadPercentage, 0m);

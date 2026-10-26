@@ -10,6 +10,8 @@ public sealed class DoubleProgressionScheme(RecordCalculator? records = null)
 
     protected override int CountPlannedSets(DoubleProgressionParameters parameters) => parameters.Sets;
 
+    protected override int FailureCount(DoubleProgressionState state) => state.FailureCount;
+
     protected override SchemeDecision<DoubleProgressionState> Decide(
         DoubleProgressionParameters parameters, DoubleProgressionState state, ExerciseLog log)
     {
@@ -47,5 +49,5 @@ public sealed class DoubleProgressionScheme(RecordCalculator? records = null)
     }
 
     private static SchemeDecision<DoubleProgressionState> Succeeded(Weight target, DecisionCode code) =>
-        new(target, code, FailureCount: 0, new DoubleProgressionState());
+        new(target, code, new DoubleProgressionState { FailureCount = 0 });
 }

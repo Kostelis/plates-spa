@@ -2,3 +2,14 @@ CLAUDE.md
 csharp-homework.md
 docs/
 .claude/
+
+# .NET build output
+bin/
+obj/
+TestResults/
+*.user
+.vs/
+.idea/
+
+# Local environment (secrets)
+.env

@@ -38,7 +38,7 @@
 
 **Įvestis:** programos parametrai (serijos, pakartojimų intervalas, pradinis svoris, prieaugis, mažinimo dydis – 10 %, nesėkmių riba – 2), kliento būsena (tikslas, nesėkmių skaitiklis – kiek treniruočių iš eilės buvo nesėkmingos, rekordas) ir atliktos serijos. Priskyrus programą, tikslas = pradinis svoris, nesėkmių skaitiklis = 0, rekordo nėra. Pavyzdys – 1 scenarijus.
 
-**Išvestis:** kitas tikslas, sprendimo kodas (DIDINTI, IŠLAIKYTI, NESĖKMĖ, MAŽINTI), nesėkmių skaitiklis ir naujas rekordas. Pavyzdys – 1 scenarijus.
+**Išvestis:** kitas tikslas, sprendimo kodas (DIDINTI, RIBA, IŠLAIKYTI, NESĖKMĖ, MAŽINTI), nesėkmių skaitiklis ir naujas rekordas. Pavyzdys – 1 scenarijus.
 
 **Veikimo eiga:** įvesties tikrinimas (klaida – atmetama visa treniruotė) → sprendimo taisyklė kiekvienam pratimui → apvalinimas ir rekordai → išsaugojimas vienoje transakcijoje → nauji tikslai su kodais.
 
@@ -46,7 +46,7 @@
 
 1. **Įvesties tikrinimas.** 1–50 pakartojimų, 0–500 kg (0,5 kg tikslumu), pratimas yra programoje, data ne ateityje; kitaip atmetama visa treniruotė.
 2. **Bazinis svoris** – mažiausias serijos svoris.
-3. **Didinimas.** Atliktos visos serijos ir visose pasiektas intervalo maksimumas → tikslas = bazinis svoris + prieaugis, nesėkmių skaitiklis = 0.
+3. **Didinimas.** Atliktos visos serijos ir visose pasiektas intervalo maksimumas → tikslas = bazinis svoris + prieaugis, nesėkmių skaitiklis = 0. Jei tikslas viršytų 500 kg (1 taisyklės ribą), tikslas = 500 kg, o sprendimo kodas – RIBA: treneris mato, kad automatinė progresija sustojo.
 4. **Išlaikymas.** Atliktos visos serijos, visose pasiektas minimumas, bet ne visose maksimumas → tikslas = bazinis svoris, nesėkmių skaitiklis = 0.
 5. **Mažinimas.** Bent vienoje serijoje nepasiektas minimumas arba atlikta mažiau serijų → nesėkmių skaitiklis + 1. Pasiekus ribą → tikslas = bazinis svoris, sumažintas mažinimo dydžiu, nesėkmių skaitiklis = 0 (MAŽINTI); kitaip tikslas = bazinis svoris (NESĖKMĖ).
 6. **Apvalinimas** žemyn iki 2,5 kg kartotinio (dviejų 1,25 kg diskų žingsnis); todėl kuriant programą tikrinama, ar prieaugis yra 2,5 kg kartotinis.
@@ -58,6 +58,7 @@
 | --- | --- | --- | --- |
 | Įprastas atvejis | Pritūpimas 3 × 5–8, prieaugis 5 kg; tikslas 60 kg, nesėkmių skaitiklis 0, rekordas 72,0 kg. Atlikta 60 × 8, 60 × 8, 60 × 8. | Užbaigia treniruotę | 65 kg; DIDINTI; nesėkmių skaitiklis 0; rekordas 76,0 kg. |
 | Ribinis atvejis | Tas pats; tikslas 60 kg, rekordas 76,0 kg. Atlikta 60 × 8, 60 × 8, 60 × 6. | Užbaigia treniruotę | 60 kg; IŠLAIKYTI; nesėkmių skaitiklis 0; rekordas nepakinta. |
+| Ribinis atvejis: svorio riba | Pritūpimas 3 × 5–8, prieaugis 5 kg; tikslas 500 kg, nesėkmių skaitiklis 0, rekordas 600,0 kg. Atlikta 500 × 8, 500 × 8, 500 × 8. | Užbaigia treniruotę | 500 kg (505 kg viršytų ribą); RIBA; nesėkmių skaitiklis 0; naujas rekordas 633,3 kg. |
 | Konfliktas | Spaudimas gulint 3 × 6–10, prieaugis 2,5 kg; tikslas 47,5 kg, nesėkmių skaitiklis 1, rekordas 60,0 kg. Atlikta 47,5 × 7, 47,5 × 5, 47,5 × 4. | Užbaigia treniruotę | 42,5 kg (42,75 → 42,5); MAŽINTI; nesėkmių skaitiklis 0; rekordas nepakinta. |
 | Klaida | Pritūpimas, tikslas 60 kg. Atlikta 60 × 8, 1000 × 8, 60 × 8. | Užbaigia treniruotę | Atmetama su klaida „2-osios serijos svoris 1000 kg viršija 500 kg ribą“; niekas nepakinta. |
 

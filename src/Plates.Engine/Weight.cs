@@ -1,8 +1,10 @@
 using System.Globalization;
+using System.Text.Json.Serialization;
 
 namespace Plates.Engine;
 
 /// <summary>A non-negative weight in kilograms. Used for every Target, Base weight, Increment and Record.</summary>
+[JsonConverter(typeof(WeightJsonConverter))]
 public readonly struct Weight : IEquatable<Weight>, IComparable<Weight>, IFormattable
 {
     private const decimal KgPerPound = 0.45359237m;

@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Plates.Api/Plates.Api.csproj" />
+    <Project Path="src/Plates.Engine/Plates.Engine.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Plates.Api.Tests/Plates.Api.Tests.csproj" />
+    <Project Path="tests/Plates.Engine.Tests/Plates.Engine.Tests.csproj" />
+  </Folder>
+</Solution>

@@ -13,6 +13,10 @@ internal static class DoubleProgression
     public static ProgramExercise Squat() => Exercise(new DoubleProgressionParameters(
         sets: 3, minReps: 5, maxReps: 8, startingWeight: Weight.FromKg(60m), increment: Weight.FromKg(5m)));
 
+    /// <summary>Section 3 bench press: 3 × 6–10, Increment 2,5 kg.</summary>
+    public static ProgramExercise Bench() => Exercise(new DoubleProgressionParameters(
+        sets: 3, minReps: 6, maxReps: 10, startingWeight: Weight.FromKg(47.5m), increment: Weight.FromKg(2.5m)));
+
     public static ProgramExercise Exercise(DoubleProgressionParameters parameters) =>
         new(ExerciseId, DoubleProgressionScheme.SchemeKey, JsonSerializer.SerializeToElement(parameters, JsonSerializerOptions.Web));
 

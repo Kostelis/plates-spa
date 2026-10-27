@@ -3,8 +3,6 @@ namespace Plates.Engine;
 /// <summary>A coach's settings for one exercise under double progression.</summary>
 public sealed class DoubleProgressionParameters
 {
-    private const int RepLimit = 50;
-
     public DoubleProgressionParameters(
         int sets,
         int minReps,
@@ -15,9 +13,9 @@ public sealed class DoubleProgressionParameters
         int failureLimit = 2)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(sets, 1);
-        ArgumentOutOfRangeException.ThrowIfLessThan(minReps, 1);
+        ArgumentOutOfRangeException.ThrowIfLessThan(minReps, SetLimits.MinReps);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(minReps, maxReps);
-        ArgumentOutOfRangeException.ThrowIfGreaterThan(maxReps, RepLimit);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(maxReps, SetLimits.MaxReps);
         if (increment.Kg <= 0 || increment.Kg % TargetRounding.PlateStepKg != 0)
         {
             throw new ArgumentOutOfRangeException(nameof(increment), increment, $"Increment must be a positive multiple of {TargetRounding.PlateStepKg} kg.");

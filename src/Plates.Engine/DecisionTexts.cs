@@ -10,7 +10,7 @@ public static class DecisionTexts
         Texts = new Dictionary<DecisionCode, string>
         {
             [DecisionCode.Increase] = "Visose serijose pasiektas pakartojimų maksimumas – svoris didinamas.",
-            [DecisionCode.Limit] = "Pasiekta 500 kg riba – automatinė progresija sustabdyta, sprendžia treneris.",
+            [DecisionCode.Limit] = string.Create(Lithuanian.Culture, $"Pasiekta {SetLimits.MaxWeight} riba – automatinė progresija sustabdyta, sprendžia treneris."),
             [DecisionCode.Hold] = "Ne visose serijose pasiektas maksimumas – svoris nekeičiamas.",
             [DecisionCode.Failure] = "Ne visose serijose pasiektas minimumas – svoris nekeičiamas.",
             [DecisionCode.Deload] = "Pasiekta nesėkmių riba – svoris mažinamas.",

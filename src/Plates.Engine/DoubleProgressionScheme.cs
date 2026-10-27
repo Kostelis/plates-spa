@@ -26,20 +26,22 @@ public sealed class DoubleProgressionScheme(RecordCalculator? records = null)
         var baseWeight = log.Sets.Min(set => set.Weight);
         var increased = baseWeight + parameters.Increment;
         var failures = state.FailureCount + 1;
+        var evaluation = Evaluate(parameters, log.Sets);
+        var failed = (evaluation & Passed) != Passed;
 
-        return Evaluate(parameters, log.Sets) switch
+        return evaluation switch
         {
-            var evaluation when (evaluation & Passed) != Passed && failures >= parameters.FailureLimit =>
+            _ when failed && failures >= parameters.FailureLimit =>
                 Decided(baseWeight - baseWeight * parameters.DeloadPercentage, DecisionCode.Deload, failureCount: 0),
-            var evaluation when (evaluation & Passed) != Passed =>
-                Decided(baseWeight, DecisionCode.Failure, failures),
+            _ when failed =>
+                Decided(baseWeight, DecisionCode.Failure, failureCount: failures),
             Passed | SetEvaluation.MaxReached when increased > TargetLimit =>
                 Decided(TargetLimit, DecisionCode.Limit, failureCount: 0),
             Passed | SetEvaluation.MaxReached =>
                 Decided(increased, DecisionCode.Increase, failureCount: 0),
             Passed =>
                 Decided(baseWeight, DecisionCode.Hold, failureCount: 0),
-            var evaluation => throw new UnreachableException($"Unexpected set evaluation {evaluation}."),
+            _ => throw new UnreachableException($"Unexpected set evaluation {evaluation}."),
         };
     }
 

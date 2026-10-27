@@ -47,6 +47,15 @@ public class WorkoutValidationTests
     }
 
     [Fact]
+    public void AnOverweightSetOffTheStepReportsOnlyTheLimit()
+    {
+        // Fixing the weight to 500 kg or less usually fixes the step too, so one error is enough.
+        Validator.TryValidate(Workout(Log(Set(1000.3m, 8))), out var errors);
+
+        Assert.Equal(new ValidationError(ExerciseId, 1, "1-osios serijos svoris 1000,3 kg viršija 500 kg ribą"), Assert.Single(errors));
+    }
+
+    [Fact]
     public void TheThirdSetIsWrittenAs3Iosios()
     {
         Validator.TryValidate(Workout(Log(Set(60m, 8), Set(60m, 8), Set(1000m, 8))), out var errors);

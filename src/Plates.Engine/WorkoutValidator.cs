@@ -1,5 +1,3 @@
-using System.Globalization;
-
 namespace Plates.Engine;
 
 /// <summary>
@@ -8,8 +6,6 @@ namespace Plates.Engine;
 /// </summary>
 public sealed class WorkoutValidator(Func<ProgramExercise, int> plannedSets, TimeProvider time)
 {
-    private static readonly CultureInfo Lithuanian = CultureInfo.GetCultureInfo("lt-LT");
-
     public bool TryValidate(WorkoutInput input, out IReadOnlyList<ValidationError> errors)
     {
         var found = new List<ValidationError>();
@@ -68,11 +64,11 @@ public sealed class WorkoutValidator(Func<ProgramExercise, int> plannedSets, Tim
 
             if (set is { Weight.Kg: > SetLimits.MaxKg })
             {
-                errors.Add(new ValidationError(log.ExerciseId, number, string.Create(Lithuanian, $"{setName} svoris {set.Weight} viršija {SetLimits.MaxWeight} ribą")));
+                errors.Add(new ValidationError(log.ExerciseId, number, string.Create(Lithuanian.Culture, $"{setName} svoris {set.Weight} viršija {SetLimits.MaxWeight} ribą")));
             }
             else if (set.Weight.Kg % SetLimits.WeightStepKg is not 0m)
             {
-                errors.Add(new ValidationError(log.ExerciseId, number, string.Create(Lithuanian, $"{setName} svoris {set.Weight} turi būti nurodytas {SetLimits.WeightStepKg} kg tikslumu")));
+                errors.Add(new ValidationError(log.ExerciseId, number, string.Create(Lithuanian.Culture, $"{setName} svoris {set.Weight} turi būti nurodytas {SetLimits.WeightStepKg} kg tikslumu")));
             }
         }
     }

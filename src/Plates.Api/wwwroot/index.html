@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="lt">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Plates – progresijos variklio demonstracija</title>
+  <style>
+    :root {
+      --bg: #f6f7f9; --panel: #fff; --text: #1d2330; --muted: #5f6878; --line: #dde1e8;
+      --accent: #2856c8; --error: #b3261e; --error-bg: #fdecea;
+      --up: #1b7f3b; --hold: #5f6878; --fail: #a15c00; --down: #b3261e; --limit: #6a3fb5;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #14171d; --panel: #1d2129; --text: #e6e9ef; --muted: #9aa3b2; --line: #313744;
+        --accent: #7fa2ff; --error: #ff8a80; --error-bg: #3a1d1b;
+        --up: #6fd38f; --hold: #9aa3b2; --fail: #f0b45a; --down: #ff8a80; --limit: #c3a6ff;
+      }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.45 system-ui, sans-serif; }
+    main { max-width: 1040px; margin: 0 auto; padding: 24px 16px 48px; }
+    h1 { font-size: 22px; margin: 0 0 4px; }
+    h2 { font-size: 16px; margin: 0 0 12px; }
+    p.lead { color: var(--muted); margin: 0 0 20px; }
+    section { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+    .card { border: 1px solid var(--line); border-radius: 6px; padding: 12px; }
+    .card h3 { font-size: 15px; margin: 0 0 8px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .muted { color: var(--muted); }
+    .big { font-size: 22px; font-weight: 600; }
+    dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; margin: 0; }
+    dt { color: var(--muted); }
+    dd { margin: 0; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .toolbar .spacer { flex: 1; }
+    button { font: inherit; padding: 6px 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--panel); color: var(--text); cursor: pointer; }
+    button:hover { border-color: var(--accent); }
+    button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+    button.small { padding: 2px 8px; font-size: 13px; }
+    input { font: inherit; padding: 4px 6px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); color: var(--text); }
+    input[type=number] { width: 80px; }
+    .set { display: flex; align-items: center; gap: 6px; margin: 4px 0; flex-wrap: wrap; }
+    .set .n { width: 20px; color: var(--muted); }
+    .skipped .sets, .skipped .add { opacity: .4; pointer-events: none; }
+    .err { color: var(--error); background: var(--error-bg); border-radius: 4px; padding: 2px 6px; font-size: 13px; width: 100%; }
+    .has-error input { border-color: var(--error); }
+    #errors:empty, #notice:empty { display: none; }
+    #notice { color: var(--muted); margin-top: 8px; }
+    .badge { display: inline-block; font-size: 12px; font-weight: 600; padding: 1px 8px; border-radius: 999px; border: 1px solid currentColor; white-space: nowrap; }
+    .Increase { color: var(--up); } .Hold { color: var(--hold); } .Failure { color: var(--fail); }
+    .Deload { color: var(--down); } .Limit { color: var(--limit); }
+    .unit { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+    .unit button { border: 0; border-radius: 0; }
+    .unit button[aria-pressed=true] { background: var(--accent); color: #fff; }
+    .table-wrap { overflow-x: auto; }
+    table { border-collapse: collapse; width: 100%; font-size: 14px; }
+    th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { color: var(--muted); font-weight: 600; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Plates – progresijos variklio demonstracija</h1>
+  <p class="lead">Registruokite treniruotę ir pažiūrėkite, kokius kitos treniruotės tikslus apskaičiuoja variklis. Būsena laikoma tik šiame puslapyje – perkrovus pradedama iš naujo.</p>
+
+  <section>
+    <div class="toolbar">
+      <h2 style="margin:0">Programa</h2>
+      <span class="spacer"></span>
+      <span class="muted">Svoriai:</span>
+      <span class="unit" role="group" aria-label="Svorio vienetai">
+        <button type="button" data-unit="kg" aria-pressed="true">kg</button>
+        <button type="button" data-unit="lb" aria-pressed="false">lb</button>
+      </span>
+    </div>
+    <div class="grid" id="program" style="margin-top:12px"></div>
+  </section>
+
+  <section>
+    <h2>Dabartinė būsena</h2>
+    <div class="grid" id="states"></div>
+  </section>
+
+  <section>
+    <h2>Treniruotė</h2>
+    <div class="toolbar" style="margin-bottom:12px">
+      <span class="muted">Pavyzdžiai:</span>
+      <button type="button" id="preset-overweight">Klaida: 1000 kg</button>
+      <button type="button" id="preset-extra-set">Klaida: per daug serijų</button>
+      <button type="button" id="preset-limit">Riba: 498 + 5 kg</button>
+      <span class="spacer"></span>
+      <button type="button" id="reset">Iš naujo</button>
+    </div>
+    <!-- novalidate: rule 1 errors come from the engine, not the browser. -->
+    <form id="workout" novalidate>
+      <div class="grid" id="exercises"></div>
+      <div class="toolbar" style="margin-top:12px">
+        <label>Treniruotės data <input type="date" id="date" required></label>
+        <span class="spacer"></span>
+        <button type="submit" class="primary">Registruoti treniruotę</button>
+      </div>
+      <div id="errors" style="margin-top:8px"></div>
+      <div id="notice"></div>
+    </form>
+  </section>
+
+  <section>
+    <h2>Istorija</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Treniruotė</th><th>Pratimas</th><th>Atliktos serijos</th><th>Sprendimas</th><th>Priežastis</th><th>Naujas tikslas</th><th>Rekordas</th></tr>
+        </thead>
+        <tbody id="history"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<script>
+  'use strict';
+
+  const SCHEME = 'double-progression';
+
+  // Section 7 program. Deload percentage and Failure limit are left at the engine's defaults (10 %, 2).
+  const PROGRAM = [
+    { exerciseId: '5f0c1a52-8d2e-4c1b-9b3a-0a1e2d3c4b5a', name: 'Pritūpimas', schemeKey: SCHEME,
+      parameters: { sets: 3, minReps: 5, maxReps: 8, startingWeight: 60, increment: 5 } },
+    { exerciseId: 'b7e4d3c2-1a0f-4e9d-8c7b-6a5f4e3d2c1b', name: 'Spaudimas gulint', schemeKey: SCHEME,
+      parameters: { sets: 3, minReps: 6, maxReps: 10, startingWeight: 47.5, increment: 2.5 } },
+  ];
+  const [SQUAT, BENCH] = PROGRAM;
+  const FAILURE_LIMIT = 2;
+
+  // The earlier workout of section 7; the seed is what the engine returns for it.
+  const SEED_WORKOUT = {
+    [SQUAT.exerciseId]: [[60, 7], [60, 6], [60, 6]],
+    [BENCH.exerciseId]: [[47.5, 7], [47.5, 5], [47.5, 4]],
+  };
+
+  const CODE_NAMES = { Increase: 'DIDINTI', Limit: 'RIBA', Hold: 'IŠLAIKYTI', Failure: 'NESĖKMĖ', Deload: 'MAŽINTI' };
+
+  let states = {};    // exerciseId → last outcome from the engine
+  let form = {};      // exerciseId → { skipped, sets: [[kg, reps]] }
+  let history = [];
+  let session = 0;
+  let unit = 'kg';
+
+  const $ = id => document.getElementById(id);
+  const kg = n => n.toLocaleString('lt-LT', { maximumFractionDigits: 2 });
+  const weightText = (outcome, field) => outcome[field + (unit === 'lb' ? 'TextLb' : 'Text')] ?? '–';
+  const badge = code => `<span class="badge ${code}" title="${code}">${CODE_NAMES[code] ?? code}</span>`;
+  const escape = text => String(text).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+
+  function today() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+
+  // The browser's own offset, so "not in the future" is checked against the client's calendar day.
+  function withOffset(date) {
+    const minutes = -new Date().getTimezoneOffset();
+    const sign = minutes >= 0 ? '+' : '-';
+    const abs = Math.abs(minutes);
+    return `${date}T00:00:00${sign}${String(Math.floor(abs / 60)).padStart(2, '0')}:${String(abs % 60).padStart(2, '0')}`;
+  }
+
+  async function post(date, sets) {
+    const request = {
+      program: PROGRAM,
+      states: Object.entries(states).map(([exerciseId, s]) => ({ exerciseId, record: s.record, schemeState: s.schemeState })),
+      date: withOffset(date),
+      exercises: Object.entries(sets).map(([exerciseId, list]) => ({
+        exerciseId, sets: list.map(([weight, reps]) => ({ weight, reps })),
+      })),
+    };
+    const response = await fetch('/demo/progress', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(request),
+    });
+    const body = await response.json().catch(() => null);
+    return { status: response.status, body };
+  }
+
+  function record(outcomes, sets) {
+    session++;
+    for (const outcome of outcomes) {
+      states[outcome.exerciseId] = outcome;
+      history.push({ session, outcome, sets: sets[outcome.exerciseId] });
+    }
+  }
+
+  async function reset() {
+    states = {}; history = []; session = -1;
+    $('errors').innerHTML = ''; $('notice').textContent = '';
+    const { status, body } = await post(today(), SEED_WORKOUT);
+    if (status !== 200) {
+      $('errors').innerHTML = `<div class="err">Nepavyko apskaičiuoti pradinės būsenos (HTTP ${status}).</div>`;
+      return;
+    }
+    record(body.outcomes, SEED_WORKOUT);
+    $('date').value = today();
+    fillForm();
+    render();
+  }
+
+  // One row per planned set, pre-filled with the current Target and the top of the rep range.
+  function fillForm(overrides = {}) {
+    form = {};
+    for (const exercise of PROGRAM) {
+      const target = states[exercise.exerciseId]?.target ?? exercise.parameters.startingWeight;
+      form[exercise.exerciseId] = overrides[exercise.exerciseId] ?? {
+        skipped: false,
+        sets: Array.from({ length: exercise.parameters.sets }, () => [target, exercise.parameters.maxReps]),
+      };
+    }
+  }
+
+  function render(errors = []) {
+    $('program').innerHTML = PROGRAM.map(({ name, parameters: p }) => `
+      <div class="card">
+        <h3>${name}</h3>
+        <div>${p.sets} × ${p.minReps}–${p.maxReps}, prieaugis +${kg(p.increment)} kg</div>
+        <div class="muted">Pradinis svoris ${kg(p.startingWeight)} kg · mažinimas 10 % · nesėkmių riba ${FAILURE_LIMIT}</div>
+      </div>`).join('');
+
+    $('states').innerHTML = PROGRAM.map(({ exerciseId, name }) => {
+      const s = states[exerciseId];
+      if (!s) return `<div class="card"><h3>${name}</h3><div class="muted">Nėra duomenų</div></div>`;
+      return `
+        <div class="card">
+          <h3>${name} ${badge(s.code)}</h3>
+          <dl>
+            <dt>Tikslas</dt><dd class="big">${weightText(s, 'target')}</dd>
+            <dt>Nesėkmių skaitiklis</dt><dd>${s.failureCount} iš ${FAILURE_LIMIT}</dd>
+            <dt>Rekordas (1RM)</dt><dd>${weightText(s, 'record')}</dd>
+          </dl>
+        </div>`;
+    }).join('');
+
+    const byExercise = id => errors.filter(e => e.exerciseId === id);
+    $('exercises').innerHTML = PROGRAM.map(({ exerciseId, name }) => {
+      const entry = form[exerciseId];
+      const mine = byExercise(exerciseId);
+      const exerciseErrors = mine.filter(e => e.setNumber == null);
+      const rows = entry.sets.map(([weight, reps], i) => {
+        const setErrors = mine.filter(e => e.setNumber === i + 1);
+        return `
+          <div class="set ${setErrors.length ? 'has-error' : ''}">
+            <span class="n">${i + 1}.</span>
+            <input type="number" min="0" step="0.5" value="${weight}" data-ex="${exerciseId}" data-i="${i}" data-f="0" aria-label="${name}, ${i + 1}-oji serija, svoris kg"> kg ×
+            <input type="number" min="1" step="1" value="${reps}" data-ex="${exerciseId}" data-i="${i}" data-f="1" aria-label="${name}, ${i + 1}-oji serija, pakartojimai">
+            <button type="button" class="small" data-remove="${exerciseId}" data-i="${i}" title="Pašalinti seriją">✕</button>
+            ${setErrors.map(e => `<div class="err">${escape(e.message)}</div>`).join('')}
+          </div>`;
+      }).join('');
+      return `
+        <div class="card ${entry.skipped ? 'skipped' : ''} ${exerciseErrors.length ? 'has-error' : ''}">
+          <h3>${name} <label class="muted"><input type="checkbox" data-skip="${exerciseId}" ${entry.skipped ? 'checked' : ''}> Praleisti</label></h3>
+          <div class="sets">${rows || '<div class="muted">Nėra serijų</div>'}</div>
+          <button type="button" class="small add" data-add="${exerciseId}">+ Serija</button>
+          ${exerciseErrors.map(e => `<div class="err" style="margin-top:6px">${escape(e.message)}</div>`).join('')}
+        </div>`;
+    }).join('');
+
+    const known = new Set(PROGRAM.map(e => e.exerciseId));
+    $('errors').innerHTML = errors
+      .filter(e => !known.has(e.exerciseId))
+      .map(e => `<div class="err">${escape(e.message)}</div>`).join('');
+
+    $('history').innerHTML = [...history].reverse().map(({ session, outcome, sets }) => {
+      const name = PROGRAM.find(e => e.exerciseId === outcome.exerciseId)?.name ?? outcome.exerciseId;
+      const logged = sets.map(([weight, reps]) => `${kg(weight)} kg × ${reps}`).join(', ');
+      return `
+        <tr>
+          <td>${session === 0 ? '0 (ankstesnė)' : session}</td>
+          <td>${name}</td>
+          <td>${logged}</td>
+          <td>${badge(outcome.code)}</td>
+          <td>${escape(outcome.reason)}</td>
+          <td>${weightText(outcome, 'target')}</td>
+          <td>${weightText(outcome, 'record')}</td>
+        </tr>`;
+    }).join('');
+
+    document.querySelectorAll('.unit button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.unit === unit)));
+  }
+
+  // Skipped exercises are left out of the request (clarified rule 9), so their state stays as it was.
+  async function submit(event) {
+    event.preventDefault();
+    $('notice').textContent = '';
+    const sets = {};
+    for (const [exerciseId, entry] of Object.entries(form)) {
+      if (!entry.skipped) sets[exerciseId] = entry.sets;
+    }
+
+    const { status, body } = await post($('date').value, sets);
+    if (status === 200) {
+      if (body.outcomes.length === 0) {
+        $('notice').textContent = 'Variklis negrąžino nė vieno sprendimo – būsena nepakeista.';
+        render();
+        return;
+      }
+      record(body.outcomes, sets);
+      fillForm();
+      render();
+    } else if (status === 400 && body?.errors) {
+      render(body.errors);
+    } else {
+      render();
+      $('errors').innerHTML = `<div class="err">Užklausa nepavyko (HTTP ${status}). Patikrinkite, ar visi laukai užpildyti ir svoriai neneigiami.</div>`;
+    }
+  }
+
+  function preset(overrides) {
+    fillForm(overrides);
+    $('notice').textContent = '';
+    render();
+  }
+
+  $('exercises').addEventListener('input', e => {
+    const { ex, i, f } = e.target.dataset;
+    if (ex !== undefined) form[ex].sets[i][f] = e.target.value === '' ? null : Number(e.target.value);
+  });
+  $('exercises').addEventListener('change', e => {
+    const id = e.target.dataset.skip;
+    if (id) { form[id].skipped = e.target.checked; render(); }
+  });
+  $('exercises').addEventListener('click', e => {
+    const { add, remove, i } = e.target.dataset;
+    if (add) {
+      const sets = form[add].sets;
+      sets.push(sets.length ? [...sets[sets.length - 1]] : [states[add]?.target ?? 0, 1]);
+      render();
+    } else if (remove) {
+      form[remove].sets.splice(Number(i), 1);
+      render();
+    }
+  });
+  document.querySelectorAll('.unit button').forEach(b => b.addEventListener('click', () => { unit = b.dataset.unit; render(); }));
+  $('workout').addEventListener('submit', submit);
+  $('reset').addEventListener('click', reset);
+
+  $('preset-overweight').addEventListener('click', () => {
+    const t = states[SQUAT.exerciseId].target;
+    preset({ [SQUAT.exerciseId]: { skipped: false, sets: [[t, 8], [1000, 8], [t, 8]] } });
+  });
+  $('preset-extra-set').addEventListener('click', () => {
+    const t = states[SQUAT.exerciseId].target;
+    preset({ [SQUAT.exerciseId]: { skipped: false, sets: [[t, 8], [t, 8], [t, 8], [t, 8]] } });
+  });
+  $('preset-limit').addEventListener('click', () => {
+    preset({ [SQUAT.exerciseId]: { skipped: false, sets: [[498, 8], [498, 8], [498, 8]] } });
+  });
+
+  reset();
+</script>
+</body>
+</html>

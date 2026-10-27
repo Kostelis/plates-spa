@@ -54,15 +54,13 @@ public class DemoProgressTests(WebApplicationFactory<Program> factory) : IClassF
     }
 
     [Fact]
-    public async Task FormatsTargetAndRecordInKgAndLb()
+    public async Task FormatsTargetAndRecordInKg()
     {
         var response = await PostOk(NewClient(), Request([], Now, Log(SquatId, (60m, 7), (60m, 6), (60m, 6))));
 
         var squat = Outcome(response, SquatId);
         Assert.Equal("60 kg", squat.GetProperty("targetText").GetString());
-        Assert.Equal("132,3 lb", squat.GetProperty("targetTextLb").GetString());
         Assert.Equal("74 kg", squat.GetProperty("recordText").GetString());
-        Assert.Equal("163,1 lb", squat.GetProperty("recordTextLb").GetString());
     }
 
     [Fact]

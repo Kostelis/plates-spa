@@ -50,9 +50,6 @@
     .badge { display: inline-block; font-size: 12px; font-weight: 600; padding: 1px 8px; border-radius: 999px; border: 1px solid currentColor; white-space: nowrap; }
     .Increase { color: var(--up); } .Hold { color: var(--hold); } .Failure { color: var(--fail); }
     .Deload { color: var(--down); } .Limit { color: var(--limit); }
-    .unit { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
-    .unit button { border: 0; border-radius: 0; }
-    .unit button[aria-pressed=true] { background: var(--accent); color: #fff; }
     .table-wrap { overflow-x: auto; }
     table { border-collapse: collapse; width: 100%; font-size: 14px; }
     th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
@@ -65,16 +62,8 @@
   <p class="lead">Registruokite treniruotę ir pažiūrėkite, kokius kitos treniruotės tikslus apskaičiuoja variklis. Būsena laikoma tik šiame puslapyje – perkrovus pradedama iš naujo.</p>
 
   <section>
-    <div class="toolbar">
-      <h2 style="margin:0">Programa</h2>
-      <span class="spacer"></span>
-      <span class="muted">Svoriai:</span>
-      <span class="unit" role="group" aria-label="Svorio vienetai">
-        <button type="button" data-unit="kg" aria-pressed="true">kg</button>
-        <button type="button" data-unit="lb" aria-pressed="false">lb</button>
-      </span>
-    </div>
-    <div class="grid" id="program" style="margin-top:12px"></div>
+    <h2>Programa</h2>
+    <div class="grid" id="program"></div>
   </section>
 
   <section>
@@ -145,11 +134,10 @@
   let form = {};      // exerciseId → { skipped, sets: [[kg, reps]] }
   let history = [];
   let session = 0;
-  let unit = 'kg';
 
   const $ = id => document.getElementById(id);
   const kg = n => n.toLocaleString('lt-LT', { maximumFractionDigits: 2 });
-  const weightText = (outcome, field) => outcome[field + (unit === 'lb' ? 'TextLb' : 'Text')] ?? '–';
+  const weightText = (outcome, field) => outcome[field + 'Text'] ?? '–';
   const badge = code => `<span class="badge ${code}" title="${code}">${CODE_NAMES[code] ?? code}</span>`;
   const escape = text => String(text).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
@@ -282,8 +270,6 @@
           <td>${weightText(outcome, 'record')}</td>
         </tr>`;
     }).join('');
-
-    document.querySelectorAll('.unit button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.unit === unit)));
   }
 
   // Skipped exercises are left out of the request (clarified rule 9), so their state stays as it was.
@@ -338,7 +324,6 @@
       render();
     }
   });
-  document.querySelectorAll('.unit button').forEach(b => b.addEventListener('click', () => { unit = b.dataset.unit; render(); }));
   $('workout').addEventListener('submit', submit);
   $('reset').addEventListener('click', reset);
 

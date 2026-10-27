@@ -42,13 +42,11 @@ public static class DemoEndpoints
                 pair.Key,
                 pair.Value.Target.Kg,
                 pair.Value.Target.ToString("G", Lithuanian),
-                pair.Value.Target.ToString("LB", Lithuanian),
                 pair.Value.Code.ToString(),
                 pair.Value.Reason,
                 pair.Value.FailureCount,
                 pair.Value.Record?.Kg,
                 pair.Value.Record?.ToString("G", Lithuanian),
-                pair.Value.Record?.ToString("LB", Lithuanian),
                 pair.Value.SchemeState))
             .ToList();
 
@@ -73,18 +71,16 @@ public sealed record DemoSet(decimal Weight, int Reps);
 
 public sealed record DemoProgressResponse(IReadOnlyList<DemoOutcome> Outcomes);
 
-/// <summary>Weights in kg as numbers, plus kg and lb texts formatted by <see cref="Weight"/>, so the page does no unit maths.</summary>
+/// <summary>Weights in kg as numbers, plus texts formatted by <see cref="Weight"/> („62,5 kg“).</summary>
 public sealed record DemoOutcome(
     Guid ExerciseId,
     decimal Target,
     string TargetText,
-    string TargetTextLb,
     string Code,
     string Reason,
     int FailureCount,
     decimal? Record,
     string? RecordText,
-    string? RecordTextLb,
     JsonElement SchemeState);
 
 public sealed record DemoErrorResponse(IReadOnlyList<ValidationError> Errors);

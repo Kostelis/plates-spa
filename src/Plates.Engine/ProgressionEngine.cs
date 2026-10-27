@@ -1,9 +1,30 @@
+using System.Collections.ObjectModel;
+
 namespace Plates.Engine;
 
 /// <summary>Decides the next Target for an exercise with the progression scheme its program names.</summary>
-public sealed class ProgressionEngine(IEnumerable<IProgressionScheme> schemes)
+public sealed class ProgressionEngine(IEnumerable<IProgressionScheme> schemes, TimeProvider? time = null)
 {
+    private readonly TimeProvider _time = time ?? TimeProvider.System;
+
     private Dictionary<string, IProgressionScheme>? _schemes;
+
+    /// <summary>Validates the workout (rule 1) first; when it is valid, decides every logged exercise. Skipped exercises get no outcome.</summary>
+    /// <remarks>The caller passes a state for every program exercise (created on assignment); a program lists each exercise once.</remarks>
+    public WorkoutResult Progress(WorkoutInput input, IReadOnlyDictionary<Guid, ExerciseState> states)
+    {
+        if (!new WorkoutValidator(PlannedSets, _time).TryValidate(input, out var errors))
+        {
+            return new WorkoutResult(errors, ReadOnlyDictionary<Guid, ProgressionOutcome>.Empty);
+        }
+
+        var program = input.Program.ToDictionary(exercise => exercise.ExerciseId);
+        var outcomes = input.Exercises.ToDictionary(
+            log => log.ExerciseId,
+            log => Progress(program[log.ExerciseId], states[log.ExerciseId], log));
+
+        return new WorkoutResult(errors, outcomes);
+    }
 
     public ProgressionOutcome Progress(ProgramExercise exercise, ExerciseState state, ExerciseLog log)
     {

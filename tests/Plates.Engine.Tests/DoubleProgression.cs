@@ -7,7 +7,10 @@ internal static class DoubleProgression
 {
     public static readonly Guid ExerciseId = Guid.Parse("8d1f6c2e-3b4a-4f5e-9a7b-1c2d3e4f5a6b");
 
-    public static ProgressionEngine NewEngine() => new([new DoubleProgressionScheme()]);
+    /// <summary>The fixed "now" of every test: 27 October 2026, 18:00 UTC.</summary>
+    public static readonly DateTimeOffset Now = new(2026, 10, 27, 18, 0, 0, TimeSpan.Zero);
+
+    public static ProgressionEngine NewEngine() => new([new DoubleProgressionScheme()], new FixedTimeProvider(Now));
 
     /// <summary>Section 3 squat: 3 × 5–8, Increment 5 kg.</summary>
     public static ProgramExercise Squat() => Exercise(new DoubleProgressionParameters(
@@ -25,6 +28,13 @@ internal static class DoubleProgression
         JsonSerializer.SerializeToElement(new DoubleProgressionState { FailureCount = failureCount }, JsonSerializerOptions.Web));
 
     public static ExerciseLog Log(params LoggedSet[] sets) => ExerciseLog.Of(ExerciseId, sets);
+
+    /// <summary>A workout logged today against a program that holds only the squat.</summary>
+    public static WorkoutInput Workout(params ExerciseLog[] logs) => Workout(Now, logs);
+
+    public static WorkoutInput Workout(DateTimeOffset date, params ExerciseLog[] logs) => new([Squat()], date, logs);
+
+    public static WorkoutInput Workout(ProgramExercise exercise, params ExerciseLog[] logs) => new([exercise], Now, logs);
 
     public static LoggedSet Set(decimal kg, int reps) => new(Weight.FromKg(kg), reps);
 }

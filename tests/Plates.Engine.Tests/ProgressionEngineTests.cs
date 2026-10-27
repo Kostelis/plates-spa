@@ -50,4 +50,30 @@ public class ProgressionEngineTests
     {
         Assert.Equal(3, NewEngine().PlannedSets(Squat()));
     }
+
+    [Fact]
+    public void Scenario5_AnInvalidWorkoutReturnsErrorsAndNoOutcomes()
+    {
+        var states = new Dictionary<Guid, ExerciseState> { [ExerciseId] = State(recordKg: null) };
+
+        var result = NewEngine().Progress(Workout(Log(Set(60m, 8), Set(1000m, 8), Set(60m, 8))), states);
+
+        Assert.Equal("2-osios serijos svoris 1000 kg viršija 500 kg ribą", Assert.Single(result.Errors).Message);
+        Assert.Empty(result.Outcomes);
+    }
+
+    [Fact]
+    public void AValidWorkoutDecidesEveryLoggedExerciseAndSkipsTheRest()
+    {
+        var benchId = Guid.NewGuid();
+        var input = new WorkoutInput([Squat(), Bench() with { ExerciseId = benchId }], Now, [Log(Set(60m, 8), Set(60m, 8), Set(60m, 8))]);
+        var states = new Dictionary<Guid, ExerciseState> { [ExerciseId] = State(recordKg: null), [benchId] = State(recordKg: null) };
+
+        var result = NewEngine().Progress(input, states);
+
+        Assert.Empty(result.Errors);
+        var (exerciseId, outcome) = Assert.Single(result.Outcomes);
+        Assert.Equal(ExerciseId, exerciseId);
+        Assert.Equal(DecisionCode.Increase, outcome.Code);
+    }
 }

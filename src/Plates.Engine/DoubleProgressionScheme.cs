@@ -11,9 +11,6 @@ public sealed class DoubleProgressionScheme(RecordCalculator? records = null)
     /// <summary>Every set planned was done and each reached the minimum reps.</summary>
     private const SetEvaluation Passed = SetEvaluation.AllSetsDone | SetEvaluation.MinReached;
 
-    /// <summary>Rule 3: a Target never goes above the rule 1 weight limit.</summary>
-    private static readonly Weight TargetLimit = Weight.FromKg(500m);
-
     public override string Key => SchemeKey;
 
     protected override int CountPlannedSets(DoubleProgressionParameters parameters) => parameters.Sets;
@@ -35,8 +32,8 @@ public sealed class DoubleProgressionScheme(RecordCalculator? records = null)
                 Decided(baseWeight - baseWeight * parameters.DeloadPercentage, DecisionCode.Deload, failureCount: 0),
             _ when failed =>
                 Decided(baseWeight, DecisionCode.Failure, failureCount: failures),
-            Passed | SetEvaluation.MaxReached when increased > TargetLimit =>
-                Decided(TargetLimit, DecisionCode.Limit, failureCount: 0),
+            Passed | SetEvaluation.MaxReached when increased > LoadLimit.Max =>
+                Decided(LoadLimit.Max, DecisionCode.Limit, failureCount: 0),
             Passed | SetEvaluation.MaxReached =>
                 Decided(increased, DecisionCode.Increase, failureCount: 0),
             Passed =>

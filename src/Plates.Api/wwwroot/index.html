@@ -99,7 +99,7 @@
     <div class="table-wrap">
       <table>
         <thead>
-          <tr><th>Treniruotė</th><th>Pratimas</th><th>Atliktos serijos</th><th>Sprendimas</th><th>Priežastis</th><th>Naujas tikslas</th><th>Rekordas</th></tr>
+          <tr><th>Treniruotė</th><th>Pratimas</th><th>Atliktos serijos</th><th>Sprendimas</th><th>Priežastis</th><th>Naujas tikslas</th><th>Teorinis 1RM (apskaičiuotas)</th></tr>
         </thead>
         <tbody id="history"></tbody>
       </table>
@@ -132,8 +132,7 @@
 
   let states = {};    // exerciseId → last outcome from the engine
   let form = {};      // exerciseId → { skipped, sets: [[kg, reps]] }
-  let history = [];
-  let session = 0;
+  let history = [];  // { date, earlier, outcome, sets }, oldest first
 
   const $ = id => document.getElementById(id);
   const kg = n => n.toLocaleString('lt-LT', { maximumFractionDigits: 2 });
@@ -141,8 +140,10 @@
   const badge = code => `<span class="badge ${code}" title="${code}">${CODE_NAMES[code] ?? code}</span>`;
   const escape = text => String(text).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
-  function today() {
+  // A local calendar date, yyyy-mm-dd; daysAgo = 0 is today.
+  function localDate(daysAgo = 0) {
     const d = new Date();
+    d.setDate(d.getDate() - daysAgo);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }
 
@@ -170,24 +171,25 @@
     return { status: response.status, body };
   }
 
-  function record(outcomes, sets) {
-    session++;
+  function record(outcomes, sets, date, earlier = false) {
     for (const outcome of outcomes) {
       states[outcome.exerciseId] = outcome;
-      history.push({ session, outcome, sets: sets[outcome.exerciseId] });
+      history.push({ date, earlier, outcome, sets: sets[outcome.exerciseId] });
     }
   }
 
   async function reset() {
-    states = {}; history = []; session = -1;
+    states = {}; history = [];
     $('errors').innerHTML = ''; $('notice').textContent = '';
-    const { status, body } = await post(today(), SEED_WORKOUT);
+    // The earlier workout is dated two days back, so it reads as an earlier session in the history.
+    const seedDate = localDate(2);
+    const { status, body } = await post(seedDate, SEED_WORKOUT);
     if (status !== 200) {
       $('errors').innerHTML = `<div class="err">Nepavyko apskaičiuoti pradinės būsenos (HTTP ${status}).</div>`;
       return;
     }
-    record(body.outcomes, SEED_WORKOUT);
-    $('date').value = today();
+    record(body.outcomes, SEED_WORKOUT, seedDate, true);
+    $('date').value = localDate();
     fillForm();
     render();
   }
@@ -221,7 +223,7 @@
           <dl>
             <dt>Tikslas</dt><dd class="big">${weightText(s, 'target')}</dd>
             <dt>Nesėkmių skaitiklis</dt><dd>${s.failureCount} iš ${FAILURE_LIMIT}</dd>
-            <dt>Rekordas (1RM)</dt><dd>${weightText(s, 'record')}</dd>
+            <dt>Teorinis 1RM (apskaičiuotas)</dt><dd>${weightText(s, 'record')}</dd>
           </dl>
         </div>`;
     }).join('');
@@ -256,12 +258,12 @@
       .filter(e => !known.has(e.exerciseId))
       .map(e => `<div class="err">${escape(e.message)}</div>`).join('');
 
-    $('history').innerHTML = [...history].reverse().map(({ session, outcome, sets }) => {
+    $('history').innerHTML = [...history].reverse().map(({ date, earlier, outcome, sets }) => {
       const name = PROGRAM.find(e => e.exerciseId === outcome.exerciseId)?.name ?? outcome.exerciseId;
       const logged = sets.map(([weight, reps]) => `${kg(weight)} kg × ${reps}`).join(', ');
       return `
         <tr>
-          <td>${session === 0 ? '0 (ankstesnė)' : session}</td>
+          <td>${date}${earlier ? ' (ankstesnė)' : ''}</td>
           <td>${name}</td>
           <td>${logged}</td>
           <td>${badge(outcome.code)}</td>
@@ -281,14 +283,15 @@
       if (!entry.skipped) sets[exerciseId] = entry.sets;
     }
 
-    const { status, body } = await post($('date').value, sets);
+    const date = $('date').value;
+    const { status, body } = await post(date, sets);
     if (status === 200) {
       if (body.outcomes.length === 0) {
         $('notice').textContent = 'Variklis negrąžino nė vieno sprendimo – būsena nepakeista.';
         render();
         return;
       }
-      record(body.outcomes, sets);
+      record(body.outcomes, sets, date);
       fillForm();
       render();
     } else if (status === 400 && body?.errors) {

@@ -26,7 +26,8 @@ public sealed class ProgressionEngine(IEnumerable<IProgressionScheme> schemes, T
         return new WorkoutResult(errors, outcomes);
     }
 
-    public ProgressionOutcome Progress(ProgramExercise exercise, ExerciseState state, ExerciseLog log)
+    /// <summary>Decides one exercise without rule 1; callers outside the engine go through the workout overload.</summary>
+    internal ProgressionOutcome Progress(ProgramExercise exercise, ExerciseState state, ExerciseLog log)
     {
         if (log.ExerciseId != exercise.ExerciseId)
         {

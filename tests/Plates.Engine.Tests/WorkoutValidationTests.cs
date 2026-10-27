@@ -97,6 +97,21 @@ public class WorkoutValidationTests
     }
 
     [Fact]
+    public void AnEmptyEntryForAnExerciseNotInTheProgramReportsBothErrors()
+    {
+        var otherExercise = Guid.NewGuid();
+
+        Validator.TryValidate(Workout(ExerciseLog.Of(otherExercise)), out var errors);
+
+        Assert.Equal(
+            [
+                new ValidationError(otherExercise, null, "Pratimo nėra programoje"),
+                new ValidationError(otherExercise, null, "Pratime neatlikta nė viena serija"),
+            ],
+            errors);
+    }
+
+    [Fact]
     public void TheSameExerciseLoggedTwiceIsRejected()
     {
         var valid = Validator.TryValidate(Workout(Log(Set(60m, 8)), Log(Set(60m, 8))), out var errors);

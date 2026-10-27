@@ -32,8 +32,8 @@ public sealed class DoubleProgressionScheme(RecordCalculator? records = null)
                 Decided(baseWeight - baseWeight * parameters.DeloadPercentage, DecisionCode.Deload, failureCount: 0),
             _ when failed =>
                 Decided(baseWeight, DecisionCode.Failure, failureCount: failures),
-            Passed | SetEvaluation.MaxReached when increased > LoadLimit.Max =>
-                Decided(LoadLimit.Max, DecisionCode.Limit, failureCount: 0),
+            Passed | SetEvaluation.MaxReached when increased > SetLimits.MaxWeight =>
+                Decided(SetLimits.MaxWeight, DecisionCode.Limit, failureCount: 0),
             Passed | SetEvaluation.MaxReached =>
                 Decided(increased, DecisionCode.Increase, failureCount: 0),
             Passed =>

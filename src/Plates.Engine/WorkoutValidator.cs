@@ -8,11 +8,6 @@ namespace Plates.Engine;
 /// </summary>
 public sealed class WorkoutValidator(Func<ProgramExercise, int> plannedSets, TimeProvider time)
 {
-    public const int MaxReps = 50;
-
-    private const int MinReps = 1;
-    private const decimal WeightStepKg = 0.5m;
-
     private static readonly CultureInfo Lithuanian = CultureInfo.GetCultureInfo("lt-LT");
 
     public bool TryValidate(WorkoutInput input, out IReadOnlyList<ValidationError> errors)
@@ -35,12 +30,17 @@ public sealed class WorkoutValidator(Func<ProgramExercise, int> plannedSets, Tim
 
             ValidateSets(log, found);
 
+            var inProgram = programIds.Contains(log.ExerciseId);
+            if (!inProgram)
+            {
+                found.Add(new ValidationError(log.ExerciseId, null, "Pratimo nėra programoje"));
+            }
+
             var exerciseError = log switch
             {
                 { Sets.Count: 0 } => "Pratime neatlikta nė viena serija",
-                _ when !programIds.Contains(log.ExerciseId) => "Pratimo nėra programoje",
-                _ when PlannedSets(input, log.ExerciseId) is var planned && log.Sets.Count > planned =>
-                    $"Pratime atlikta {log.Sets.Count} {SetsNoun(log.Sets.Count)}, programoje numatyt{(SetsNoun(planned) == "serijos" ? "os" : "a")} {planned}",
+                _ when inProgram && PlannedSets(input, log.ExerciseId) is var planned && log.Sets.Count > planned =>
+                    $"Pratime atlikta {log.Sets.Count} {SetCount(log.Sets.Count).Noun}, programoje {SetCount(planned).Planned} {planned}",
                 _ => null,
             };
 
@@ -59,30 +59,37 @@ public sealed class WorkoutValidator(Func<ProgramExercise, int> plannedSets, Tim
         for (var number = 1; number <= log.Sets.Count; number++)
         {
             var set = log.Sets[number - 1];
-            var setName = $"{number}-{(number % 10, number % 100) switch { (3, not 13) => "iosios", _ => "osios" }} serijos";
+            var setName = SetName(number);
 
-            if (set is { Reps: < MinReps or > MaxReps })
+            if (set is { Reps: < SetLimits.MinReps or > SetLimits.MaxReps })
             {
-                errors.Add(new ValidationError(log.ExerciseId, number, $"{setName} pakartojimų skaičius {set.Reps} turi būti nuo {MinReps} iki {MaxReps}"));
+                errors.Add(new ValidationError(log.ExerciseId, number, $"{setName} pakartojimų skaičius {set.Reps} turi būti nuo {SetLimits.MinReps} iki {SetLimits.MaxReps}"));
             }
 
-            if (set is { Weight.Kg: > LoadLimit.MaxKg })
+            if (set is { Weight.Kg: > SetLimits.MaxKg })
             {
-                errors.Add(new ValidationError(log.ExerciseId, number, string.Create(Lithuanian, $"{setName} svoris {set.Weight} viršija {LoadLimit.Max} ribą")));
+                errors.Add(new ValidationError(log.ExerciseId, number, string.Create(Lithuanian, $"{setName} svoris {set.Weight} viršija {SetLimits.MaxWeight} ribą")));
             }
-            else if (set.Weight.Kg % WeightStepKg is not 0m)
+            else if (set.Weight.Kg % SetLimits.WeightStepKg is not 0m)
             {
-                errors.Add(new ValidationError(log.ExerciseId, number, string.Create(Lithuanian, $"{setName} svoris {set.Weight} turi būti nurodytas {WeightStepKg} kg tikslumu")));
+                errors.Add(new ValidationError(log.ExerciseId, number, string.Create(Lithuanian, $"{setName} svoris {set.Weight} turi būti nurodytas {SetLimits.WeightStepKg} kg tikslumu")));
             }
         }
     }
 
-    /// <summary>The noun agrees with the number: 1 serija, 4 serijos, 11 serijų.</summary>
-    private static string SetsNoun(int count) => (count % 10, count % 100) switch
+    /// <summary>The ordinal agrees with the number: 1-osios, 3-iosios, 13-osios serijos.</summary>
+    private static string SetName(int number) => (number % 10, number % 100) switch
     {
-        (1, not 11) => "serija",
-        (>= 2 and <= 9, not (>= 12 and <= 19)) => "serijos",
-        _ => "serijų",
+        (3, not 13) => $"{number}-iosios serijos",
+        _ => $"{number}-osios serijos",
+    };
+
+    /// <summary>The words agree with the number: 1 serija / numatyta, 4 serijos / numatytos, 11 serijų / numatyta.</summary>
+    private static (string Noun, string Planned) SetCount(int count) => (count % 10, count % 100) switch
+    {
+        (1, not 11) => ("serija", "numatyta"),
+        (>= 2 and <= 9, not (>= 12 and <= 19)) => ("serijos", "numatytos"),
+        _ => ("serijų", "numatyta"),
     };
 
     private int PlannedSets(WorkoutInput input, Guid exerciseId) =>
